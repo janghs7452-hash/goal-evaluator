@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: evaluate
+    description: Goal evaluation operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /evaluate:
+    post:
+      operationId: evaluateGoals
+      tags: [evaluate]
+      summary: Evaluate goals from uploaded file
+      description: Accepts goal-setting file content and employee list, returns AI evaluation results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluateRequest"
+      responses:
+        "200":
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluateResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    EvaluateRequest:
+      type: object
+      properties:
+        evaluationType:
+          type: string
+          enum: [midyear, yearend]
+          description: "Type of evaluation: midyear (mid-year) or yearend (year-end)"
+        goalContent:
+          type: string
+          description: Raw text content extracted from the goal-setting document
+        employeeList:
+          type: string
+          description: Raw text content of the employee list
+      required:
+        - evaluationType
+        - goalContent
+    EmployeeScore:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Employee name
+        team:
+          type: string
+          description: Team name
+        score:
+          type: number
+          description: Score out of 5
+        feedback:
+          type: string
+          description: Individual feedback for the employee
+        hrComment:
+          type: string
+          description: HR perspective comment
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/GoalScore"
+      required:
+        - name
+        - team
+        - score
+        - feedback
+        - hrComment
+        - goals
+    GoalScore:
+      type: object
+      properties:
+        goalTitle:
+          type: string
+          description: Title or name of the goal
+        score:
+          type: number
+          description: Score out of 5 for this specific goal
+        comment:
+          type: string
+          description: Comment on this specific goal
+      required:
+        - goalTitle
+        - score
+        - comment
+    EvaluateResponse:
+      type: object
+      properties:
+        evaluationType:
+          type: string
+          enum: [midyear, yearend]
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeScore"
+        summary:
+          type: string
+          description: Overall summary of the evaluation from HR perspective
+      required:
+        - evaluationType
+        - employees
+        - summary
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
